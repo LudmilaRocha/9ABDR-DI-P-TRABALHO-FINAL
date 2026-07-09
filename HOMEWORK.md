@@ -1,0 +1,61 @@
+# Divisão do Trabalho — Databricks vs. Snowflake
+
+| Pessoa | Responsável(is) | Deadline |
+|--------|------------------|------------|
+| Pessoa 1 | Csorgo | 10/07/2025 |
+| Pessoa 2 | Ludmilla e Thiago Guilherme | 17/07/2025 |
+| Pessoa 3 | Ayrton | 17/07/2025 |
+| Pessoa 4 | Csorgo | 24/07/2025 |
+| Pessoa 5 | Karen | 28/07/2025 |
+
+---
+
+## Pessoa 1 — Base de dados e fundação do projeto
+**Responsável:** Csorgo
+**Deadline:** 10/07/2025
+
+- Escolher a base pública e justificar (problema de negócio, público-alvo, confiabilidade da fonte, volume suficiente).
+- Documentar: link da fonte, formato original, volume (registros/tamanho), dicionário de dados completo (colunas e significado).
+- Esse material vira a **"introdução"** do relatório final e é a base que as pessoas 2 e 3 vão usar para construir os pipelines — então essa pessoa entrega primeiro.
+
+---
+
+## Pessoa 2 — Pipeline completo no Databricks
+**Responsáveis:** Ludmilla e Thiago Guilherme
+**Deadline:** 17/07/2025
+
+- Construir o fluxo Bronze → Silver → Gold no Databricks usando a base definida pela Pessoa 1.
+- Implementar os quality checks e documentar o que acontece quando um falha.
+- Rodar a query final na camada Gold com resultado de negócio.
+- Capturar prints de cada etapa (ou vídeo curto) como evidência.
+
+---
+
+## Pessoa 3 — Pipeline completo no Snowflake
+**Responsável:** Ayrton
+**Deadline:** 17/07/2025
+
+- Mesma coisa que a Pessoa 2, mas no Snowflake: mesma base, mesma arquitetura Medallion, mesmos quality checks, mesma query de negócio na Gold.
+- Evidências equivalentes (prints/vídeo).
+- **Importante:** essa pessoa e a Pessoa 2 devem alinhar previamente os critérios de quality check e a estrutura das camadas, para que a comparação do item seguinte seja justa (mesma régua nas duas plataformas).
+
+---
+
+## Pessoa 4 — Comparação e conclusão
+**Responsável:** Csorgo
+**Deadline:** 24/07/2025
+
+- Junta as evidências das Pessoas 2 e 3 e monta a comparação lado a lado nas 5 dimensões: facilidade de uso, ingestão/transformação, performance, governança, custo.
+- Pesquisa e detalha o modelo de cobrança de cada plataforma (DBU no Databricks; crédito de warehouse + storage no Snowflake) e monta a estimativa de custo para o cenário do grupo.
+- Escreve a conclusão fundamentada: qual plataforma o grupo escolheria para este caso e por quê.
+
+---
+
+## Pessoa 5 — Governança, sustentabilidade e diagrama de arquitetura + Pitch
+**Responsável:** Karen
+**Deadline:** 28/07/2025
+
+- Define e justifica a frequência de atualização do pipeline (diária, semanal, anual — de acordo com a natureza da base escolhida pela Pessoa 1).
+- Define política de expurgo/retenção (o que mantém, o que arquiva, por quanto tempo).
+- Descreve como trataria dados sensíveis (mascaramento, anonimização, controle de acesso), mesmo que a base escolhida não tenha esse tipo de dado.
+- Monta o diagrama de arquitetura (Excalidraw, draw.io, PowerPoint etc., **nunca mermaid**) mostrando Bronze → Silver → Gold, tecnologias de cada etapa, onde ficam os quality checks, frequência de execução, e como as duas plataformas implementam essa arquitetura.
