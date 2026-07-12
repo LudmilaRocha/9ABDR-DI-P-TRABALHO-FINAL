@@ -6,27 +6,31 @@ Este repositório contém o Trabalho Final do MBA em Engenharia de Dados. O proj
 
 ## 🏗️ Arquitetura do Projeto
 
-O pipeline foi desenhado utilizando a **Arquitetura Medalhão** (Bronze, Silver e Gold) e preparado para orquestração moderna. 
+O pipeline foi desenhado utilizando a **Arquitetura Medalhão** (Bronze, Silver e Gold) e atende estritamente às especificações definidas no documento arquitetural base (`ARCHITECTURE.md`).
 
-Abaixo está o fluxo conceitual de como os dados trafegam desde a fonte até a camada final de análise (Gold) na nuvem:
+Abaixo está o fluxo conceitual de como os dados trafegam:
 
 ```mermaid
-graph LR
-    A[🌐 Open Football API/JSON] -->|Ingestão Diária| B((Apache Airflow))
+graph TD
+    A[Open Football API/JSON] -->|Ingestão: Semanal seg 06h| B[(Databricks: Bronze)]
     
-    subgraph Databricks / Unity Catalog
-    B --> C[(🥉 Bronze)]
-    C -->|Explode & Limpeza| D[(🥈 Silver)]
-    D -->|Window Functions| E[(🥇 Gold)]
+    subgraph Arquitetura Medalhão
+    B -->|PySpark / Delta Lake| C[(Databricks: Silver)]
+    C -->|PySpark / Window Functions| D[(Databricks: Gold)]
+    end
+    
+    subgraph Quality Checks
+    B -.->|Verifica Schema/Not-null| B
+    C -.->|Verifica Integridade/Deduplicação| C
+    D -.->|Verifica Completude| D
     end
 ```
 
-### O Papel de Cada Componente:
-1. **API / Fonte JSON**: Repositórios do *Open Football Data* fornecendo dados históricos estruturados de Copas do Mundo e Eurocopas.
-2. **Apache Airflow (Orquestrador)**: Ferramenta responsável por agendar e disparar os pipelines na ordem correta, garantindo o fluxo incremental e contínuo.
-3. **Camada Bronze (Ingestão)**: Download bruto dos dados e criação das tabelas particionadas no formato Delta.
-4. **Camada Silver (Normalização)**: Extração das listas de gols (`explode()`) para criar uma linha do tempo precisa e baseada em eventos.
-5. **Camada Gold (Negócio)**: Uso de Funções de Janela do PySpark para gerar a tabela analítica final, calculando a Eficiência Emocional (Tempo de Reação x Tempo de Apagão).
+### O Papel de Cada Camada:
+1. **Frequência de Execução**: Conforme definido na arquitetura, o fluxo ocorre semanalmente (toda segunda às 06h UTC) durante a temporada, ou mensalmente durante os recessos (jun-jul). A orquestração se dá nativamente via **Databricks Workflows**.
+2. **Camada Bronze (Ingestão)**: Download bruto dos arquivos JSON (sem transformação) e armazenamento no Unity Catalog, aplicando verificações iniciais de qualidade.
+3. **Camada Silver (Normalização)**: Aplicação de transformações (como `explode()` para criar a linha do tempo de gols) garantindo dados limpos, normalizados e enriquecidos no formato Delta.
+4. **Camada Gold (Negócio)**: Geração de métricas prontas para consumo utilizando PySpark e SQL, como o percentual de equipes que reagem após sofrer um gol.
 
 ---
 
@@ -34,20 +38,22 @@ graph LR
 
 > *"Qual é o impacto real no desempenho e postura tática dos times logo após sofrerem um gol?"*
 
-Nosso modelo de dados responde a isso na Camada Gold calculando:
-- **Resiliência:** Quanto tempo, em média, a equipe leva para empatar o jogo após sofrer o primeiro gol.
-- **Vulnerabilidade:** Qual é a probabilidade e o tempo médio para a equipe sofrer um *segundo* gol em sequência (Efeito Dominó).
+Nossa Camada Gold responde diretamente a isso analisando:
+- A proporção de times que reagem (empate/virada) após sofrerem um gol.
+- Como esse padrão de comportamento (resiliência x vulnerabilidade) varia de acordo com a seleção ou torneio.
 
 ---
 
 ## 🚀 Como Executar no Databricks Cloud
 
-Este projeto é Agnóstico de Plataforma e foi otimizado para a nuvem utilizando a funcionalidade *Databricks Repos*.
+Este projeto foi desenhado sob as premissas do *Databricks Workflow* integrado ao *Unity Catalog*.
 
 1. Conecte seu **Databricks Repos** a este repositório do GitHub.
-2. Abra o primeiro notebook (`01_Pipeline_Football_Bronze.ipynb`).
-3. Certifique-se de que a variável de ambiente está apontando para a nuvem:
+2. Certifique-se de que a variável de ambiente nos notebooks está apontando para a nuvem:
    ```python
    ENVIRONMENT = "databricks"
    ```
-4. Em um ambiente de produção real, o **Airflow** orquestraria a chamada sequencial dos notebooks. Para execução manual no Databricks, basta abrir os notebooks de 01 a 03 em ordem cronológica e executar todas as células.
+3. O projeto é executado de forma sequencial (Bronze → Silver → Gold). Para rodar manualmente:
+   - Abra o notebook `01_Pipeline_Football_Bronze.ipynb` e execute tudo.
+   - Abra o notebook `02_Pipeline_Football_Silver.ipynb` e execute tudo.
+   - Abra o notebook `03_Pipeline_Football_Gold.ipynb` e execute tudo.
