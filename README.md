@@ -1,43 +1,53 @@
-# Projeto Integrado: Eficiência Emocional no Futebol
+# ⚽ Pipeline de Dados: Eficiência Emocional no Futebol
 
-Este projeto é parte do Trabalho Final do MBA em Engenharia de Dados. O pipeline processa dados históricos de torneios internacionais de futebol (Copa do Mundo e Eurocopa) utilizando a Arquitetura Medalhão para analisar e responder a hipóteses de eficiência emocional dos times.
+Este repositório contém o Trabalho Final do MBA em Engenharia de Dados. O projeto consiste em um pipeline ponta a ponta que extrai dados históricos de futebol e aplica regras de negócio complexas para analisar o comportamento psicológico e tático das equipes durante as partidas.
 
-## Pergunta de Negócio
+---
 
-Qual é o impacto real no desempenho e postura tática dos times logo após sofrerem um gol? 
+## 🏗️ Arquitetura do Projeto
 
-A análise busca identificar:
-- Quanto tempo um time leva para empatar ou virar uma partida após sofrer um gol.
-- Se sofrer um gol aumenta a vulnerabilidade da equipe de sofrer um segundo gol em sequência.
-- Possíveis diferenças no tempo de reação dependendo do torneio.
+O pipeline foi desenhado utilizando a **Arquitetura Medalhão** (Bronze, Silver e Gold) e preparado para orquestração moderna. 
 
-## Arquitetura e Tecnologias
+Abaixo está o fluxo conceitual de como os dados trafegam desde a fonte até a camada final de análise (Gold) na nuvem:
 
-O projeto foi construído seguindo as melhores práticas de **Agnosticismo de Plataforma (Multi-Cloud)**, permitindo execução tanto em nuvem corporativa (Databricks) quanto em ambientes locais (Docker).
-
-- Fonte de Dados: Open Football Data (JSON)
-- Processamento: Apache Spark (PySpark)
-- Armazenamento: Delta Lake (Unity Catalog na nuvem ou pasta local)
-
-## Como Executar (Databricks Cloud)
-
-### 1. Sincronização (Repos)
-Utilize a funcionalidade **Databricks Repos** no seu Workspace para conectar com este repositório do GitHub e importar os notebooks de forma versionada.
-
-### 2. Execução do Pipeline Automático
-Abra o notebook da primeira camada e certifique-se de que a variável de ambiente no início do código (ou nas configurações do cluster) está apontando para o ambiente de nuvem:
-```python
-ENVIRONMENT = "databricks"
+```mermaid
+graph LR
+    A[🌐 Open Football API/JSON] -->|Ingestão Diária| B((Apache Airflow))
+    
+    subgraph Databricks / Unity Catalog
+    B --> C[(🥉 Bronze)]
+    C -->|Explode & Limpeza| D[(🥈 Silver)]
+    D -->|Window Functions| E[(🥇 Gold)]
+    end
 ```
-Em seguida, clique em **"Run All"** no notebook `01_Pipeline_Football.ipynb`. Ele fará automaticamente:
-1. O download seguro dos arquivos brutos (JSON) das fontes oficiais.
-2. A criação dinâmica e validação dos *Schemas* (bancos Bronze, Silver e Gold) utilizando Databricks SQL puro (dispensando permissões externas de APIs).
-3. A ingestão, limpeza inicial e persistência dos dados na tabela Delta `workspace.bronze.matches`.
 
-*(As Camadas Silver e Gold seguem a mesma lógica e fluxo de execução nos notebooks sequenciais).*
+### O Papel de Cada Componente:
+1. **API / Fonte JSON**: Repositórios do *Open Football Data* fornecendo dados históricos estruturados de Copas do Mundo e Eurocopas.
+2. **Apache Airflow (Orquestrador)**: Ferramenta responsável por agendar e disparar os pipelines na ordem correta, garantindo o fluxo incremental e contínuo.
+3. **Camada Bronze (Ingestão)**: Download bruto dos dados e criação das tabelas particionadas no formato Delta.
+4. **Camada Silver (Normalização)**: Extração das listas de gols (`explode()`) para criar uma linha do tempo precisa e baseada em eventos.
+5. **Camada Gold (Negócio)**: Uso de Funções de Janela do PySpark para gerar a tabela analítica final, calculando a Eficiência Emocional (Tempo de Reação x Tempo de Apagão).
 
-## Estrutura do Repositório
+---
 
-- `01_Pipeline_Football.ipynb`: Ingestão, modelagem e consolidação (Camada Bronze).
-- `FOUNDATION.md`: Documentação arquitetural conceitual.
-- `HOMEWORK.md`: Requisitos e diretrizes originais do Trabalho Final.
+## 🎯 A Pergunta de Negócio
+
+> *"Qual é o impacto real no desempenho e postura tática dos times logo após sofrerem um gol?"*
+
+Nosso modelo de dados responde a isso na Camada Gold calculando:
+- **Resiliência:** Quanto tempo, em média, a equipe leva para empatar o jogo após sofrer o primeiro gol.
+- **Vulnerabilidade:** Qual é a probabilidade e o tempo médio para a equipe sofrer um *segundo* gol em sequência (Efeito Dominó).
+
+---
+
+## 🚀 Como Executar no Databricks Cloud
+
+Este projeto é Agnóstico de Plataforma e foi otimizado para a nuvem utilizando a funcionalidade *Databricks Repos*.
+
+1. Conecte seu **Databricks Repos** a este repositório do GitHub.
+2. Abra o primeiro notebook (`01_Pipeline_Football_Bronze.ipynb`).
+3. Certifique-se de que a variável de ambiente está apontando para a nuvem:
+   ```python
+   ENVIRONMENT = "databricks"
+   ```
+4. Em um ambiente de produção real, o **Airflow** orquestraria a chamada sequencial dos notebooks. Para execução manual no Databricks, basta abrir os notebooks de 01 a 03 em ordem cronológica e executar todas as células.
