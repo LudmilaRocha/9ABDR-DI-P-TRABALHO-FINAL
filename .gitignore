@@ -30,6 +30,7 @@ env/
 # Terraform (IaC)
 # =========================
 # Ignorar diretórios locais do Terraform e estados sensíveis
+terraform/
 .terraform/
 *.tfstate
 *.tfstate.*

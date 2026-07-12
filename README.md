@@ -13,36 +13,31 @@ A análise busca identificar:
 
 ## Arquitetura e Tecnologias
 
-O projeto foi construído focado em uma implantação automatizada na nuvem, utilizando Databricks e Unity Catalog.
+O projeto foi construído seguindo as melhores práticas de **Agnosticismo de Plataforma (Multi-Cloud)**, permitindo execução tanto em nuvem corporativa (Databricks) quanto em ambientes locais (Docker).
 
 - Fonte de Dados: Open Football Data (JSON)
 - Processamento: Apache Spark (PySpark)
-- Armazenamento: Delta Lake
-- Infraestrutura como Código (IaC): Terraform
+- Armazenamento: Delta Lake (Unity Catalog na nuvem ou pasta local)
 
-## Como Executar
+## Como Executar (Databricks Cloud)
 
-### 1. Provisionamento
-O ambiente do Databricks e os catálogos devem ser provisionados utilizando Terraform:
-```bash
-cd terraform
-terraform init
-terraform apply
-```
+### 1. Sincronização (Repos)
+Utilize a funcionalidade **Databricks Repos** no seu Workspace para conectar com este repositório do GitHub e importar os notebooks de forma versionada.
 
-### 2. Sincronização
-Utilize a funcionalidade Databricks Repos no seu Workspace para conectar com este repositório do GitHub e importar os notebooks.
-
-### 3. Execução do Pipeline
-Com o repositório sincronizado no Databricks, certifique-se de que a variável de ambiente no início do notebook (ou nas configurações do cluster) está apontando para o ambiente de nuvem:
+### 2. Execução do Pipeline Automático
+Abra o notebook da primeira camada e certifique-se de que a variável de ambiente no início do código (ou nas configurações do cluster) está apontando para o ambiente de nuvem:
 ```python
 ENVIRONMENT = "databricks"
 ```
-Execute os notebooks em ordem sequencial (`01_Pipeline...`, `02_Pipeline...`). O pipeline fará a ingestão diretamente da fonte oficial e armazenará os dados estruturados de forma segura no Unity Catalog.
+Em seguida, clique em **"Run All"** no notebook `01_Pipeline_Football.ipynb`. Ele fará automaticamente:
+1. O download seguro dos arquivos brutos (JSON) das fontes oficiais.
+2. A criação dinâmica e validação dos *Schemas* (bancos Bronze, Silver e Gold) utilizando Databricks SQL puro (dispensando permissões externas de APIs).
+3. A ingestão, limpeza inicial e persistência dos dados na tabela Delta `workspace.bronze.matches`.
 
-## Estrutura
+*(As Camadas Silver e Gold seguem a mesma lógica e fluxo de execução nos notebooks sequenciais).*
 
-- `01_Pipeline_Football.ipynb`: Ingestão de dados e consolidação (Camada Bronze).
-- `FOUNDATION.md`: Documentação conceitual.
-- `HOMEWORK.md`: Requisitos originais do projeto.
-- `terraform/`: Código IaC para criação da infraestrutura.
+## Estrutura do Repositório
+
+- `01_Pipeline_Football.ipynb`: Ingestão, modelagem e consolidação (Camada Bronze).
+- `FOUNDATION.md`: Documentação arquitetural conceitual.
+- `HOMEWORK.md`: Requisitos e diretrizes originais do Trabalho Final.
