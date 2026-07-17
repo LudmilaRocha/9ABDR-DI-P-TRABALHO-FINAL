@@ -1,0 +1,36 @@
+name: openfootball_medallion
+version: 1.0.0
+config-version: 2
+
+profile: openfootball_medallion
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - target
+  - dbt_packages
+
+models:
+  openfootball_medallion:
+    bronze:
+      +schema: bronze
+      +materialized: view
+    silver:
+      +schema: silver
+      +materialized: table
+    gold:
+      +schema: gold
+      +materialized: table
+
+tests:
+  +store_failures: true
+  +schema: qc
+
+# Grava resultado de model/test em QC.DBT_RUN_RESULTS.
+on-run-end:
+  - "{{ log_dbt_run_results(results) }}"

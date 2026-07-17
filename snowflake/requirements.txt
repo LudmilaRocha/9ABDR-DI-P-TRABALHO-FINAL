@@ -1,0 +1,7 @@
+# Flatten local + dbt + dashboard
+python-dotenv>=1.0.0
+dbt-snowflake>=1.7.0,<2.0.0
+snowflake-connector-python>=3.0.0
+streamlit>=1.28.0
+pandas>=2.0.0
+plotly>=5.18.0
