@@ -1,0 +1,22 @@
+# Segredos e ambiente local
+.env
+.venv/
+__pycache__/
+*.pyc
+
+# Dados gerados (nao versionar)
+data_flat/
+*.csv
+
+# Artefatos dbt locais
+dbt_openfootball/target/
+dbt_openfootball/dbt_packages/
+dbt_openfootball/logs/
+dbt_openfootball/profiles.yml
+dbt_openfootball/.user.yml
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -1,0 +1,17 @@
+# Copie para profiles.yml. Nao versionar segredos.
+# Antes: ..\load_env.ps1
+
+openfootball_medallion:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'ACCOUNTADMIN') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'DI_P_MEDALLION') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'WH_DI_P_PIPELINE') }}"
+      schema: "{{ env_var('SNOWFLAKE_SCHEMA', 'SILVER') }}"
+      threads: "{{ env_var('DBT_THREADS', '4') | int }}"
+      client_session_keep_alive: False

@@ -1,0 +1,23 @@
+SELECT
+    MATCH_ID,
+    SEASON,
+    LEAGUE_CODE,
+    LEAGUE_NAME,
+    MATCH_DATE,
+    HOME_TEAM,
+    AWAY_TEAM,
+    HOME_SCORE_FT,
+    AWAY_SCORE_FT,
+    TEAM,
+    OPPONENT,
+    SCORER,
+    MINUTE,
+    MINUTE_RAW,
+    IS_PENALTY,
+    IS_OWN_GOAL,
+    EVENT_SEQ,
+    SOURCE_FILE,
+    SOURCE_REPO,
+    _INGESTED_AT,
+    _RUN_ID
+FROM {{ source('bronze', 'GOALS_RAW') }}

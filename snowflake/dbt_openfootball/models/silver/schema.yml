@@ -1,0 +1,62 @@
+version: 2
+
+models:
+  - name: silver_matches
+    columns:
+      - name: match_id
+        tests:
+          - not_null
+          - unique
+      - name: match_date
+        tests:
+          - not_null
+      - name: home_team
+        tests:
+          - not_null
+      - name: away_team
+        tests:
+          - not_null
+      - name: home_score_ft
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 50
+              inclusive: true
+      - name: away_score_ft
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 50
+              inclusive: true
+      - name: league_code
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['EN', 'ES', 'IT', 'DE', 'FR', 'WC']
+
+  - name: silver_goal_events
+    columns:
+      - name: match_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('silver_matches')
+              field: match_id
+      - name: scorer
+        tests:
+          - not_null
+      - name: minute
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 130
+              inclusive: true
+      - name: team
+        tests:
+          - not_null
+      - name: conceding_team
+        tests:
+          - not_null

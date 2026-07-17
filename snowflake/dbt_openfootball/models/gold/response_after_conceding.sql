@@ -1,0 +1,84 @@
+WITH ordered AS (
+    SELECT
+        MATCH_ID,
+        LEAGUE_CODE AS LEAGUE,
+        SEASON,
+        MATCH_DATE,
+        HOME_TEAM,
+        AWAY_TEAM,
+        HOME_SCORE_FT,
+        AWAY_SCORE_FT,
+        SCORER,
+        MINUTE AS GOAL_MINUTE,
+        EVENT_SEQ,
+        IS_PENALTY,
+        IS_OWN_GOAL,
+        CREDITED_TEAM,
+        CONCEDING_TEAM
+    FROM {{ ref('silver_goal_events') }}
+),
+scored AS (
+    SELECT
+        O.*,
+        (
+            SELECT COUNT(*)
+            FROM ordered P
+            WHERE P.MATCH_ID = O.MATCH_ID
+              AND (
+                    P.GOAL_MINUTE < O.GOAL_MINUTE
+                 OR (P.GOAL_MINUTE = O.GOAL_MINUTE AND P.EVENT_SEQ < O.EVENT_SEQ)
+              )
+              AND P.CREDITED_TEAM = O.HOME_TEAM
+        ) AS HOME_GOALS_BEFORE,
+        (
+            SELECT COUNT(*)
+            FROM ordered P
+            WHERE P.MATCH_ID = O.MATCH_ID
+              AND (
+                    P.GOAL_MINUTE < O.GOAL_MINUTE
+                 OR (P.GOAL_MINUTE = O.GOAL_MINUTE AND P.EVENT_SEQ < O.EVENT_SEQ)
+              )
+              AND P.CREDITED_TEAM = O.AWAY_TEAM
+        ) AS AWAY_GOALS_BEFORE,
+        (
+            SELECT COUNT(*)
+            FROM ordered AFT
+            WHERE AFT.MATCH_ID = O.MATCH_ID
+              AND AFT.CREDITED_TEAM = O.CONCEDING_TEAM
+              AND (
+                    AFT.GOAL_MINUTE > O.GOAL_MINUTE
+                 OR (AFT.GOAL_MINUTE = O.GOAL_MINUTE AND AFT.EVENT_SEQ > O.EVENT_SEQ)
+              )
+        ) AS GOALS_SCORED_AFTER_CONCEDING
+    FROM ordered O
+)
+SELECT
+    MATCH_ID,
+    LEAGUE,
+    SEASON,
+    MATCH_DATE,
+    HOME_TEAM,
+    AWAY_TEAM,
+    CONCEDING_TEAM,
+    CREDITED_TEAM AS SCORING_TEAM,
+    SCORER,
+    GOAL_MINUTE,
+    EVENT_SEQ,
+    IS_PENALTY,
+    IS_OWN_GOAL,
+    CASE
+        WHEN CONCEDING_TEAM = HOME_TEAM THEN HOME_GOALS_BEFORE - AWAY_GOALS_BEFORE
+        ELSE AWAY_GOALS_BEFORE - HOME_GOALS_BEFORE
+    END AS SCORE_DIFF_BEFORE_GOAL,
+    GOALS_SCORED_AFTER_CONCEDING,
+    CASE
+        WHEN CONCEDING_TEAM = HOME_TEAM AND HOME_SCORE_FT > AWAY_SCORE_FT THEN 'WIN'
+        WHEN CONCEDING_TEAM = HOME_TEAM AND HOME_SCORE_FT = AWAY_SCORE_FT THEN 'DRAW'
+        WHEN CONCEDING_TEAM = HOME_TEAM AND HOME_SCORE_FT < AWAY_SCORE_FT THEN 'LOSS'
+        WHEN CONCEDING_TEAM = AWAY_TEAM AND AWAY_SCORE_FT > HOME_SCORE_FT THEN 'WIN'
+        WHEN CONCEDING_TEAM = AWAY_TEAM AND AWAY_SCORE_FT = HOME_SCORE_FT THEN 'DRAW'
+        WHEN CONCEDING_TEAM = AWAY_TEAM AND AWAY_SCORE_FT < HOME_SCORE_FT THEN 'LOSS'
+        ELSE 'UNKNOWN'
+    END AS FINAL_RESULT,
+    IFF(GOALS_SCORED_AFTER_CONCEDING > 0, 1, 0) AS REACTED_FLAG
+FROM scored

@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: bronze
+    database: DI_P_MEDALLION
+    schema: BRONZE
+    tables:
+      - name: MATCHES_RAW
+      - name: GOALS_RAW
+      - name: LEAGUE_CATALOG
