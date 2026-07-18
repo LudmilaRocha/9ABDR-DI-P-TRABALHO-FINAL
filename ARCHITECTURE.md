@@ -86,7 +86,8 @@
               │     CONSUMO  —  Pergunta de negócio      │
               │                                          │
               │  "Qual % dos times reage após sofrer um  │
-              │   gol? Esse padrão varia por liga?"      │
+              │   gol? A reação leva à vitória? Esse     │
+              │   padrão varia por Copa do Mundo?"       │
               │                                          │
               │  Dashboard  /  Query analítica           │
               └──────────────────────────────────────────┘
