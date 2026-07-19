@@ -1,7 +1,7 @@
 # Copie para profiles.yml. Nao versionar segredos.
 # Antes: ..\load_env.ps1
 
-openfootball_medallion:
+worldcup_medallion:
   target: dev
   outputs:
     dev:

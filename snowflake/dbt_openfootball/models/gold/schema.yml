@@ -1,10 +1,13 @@
 version: 2
 
 models:
-  - name: response_after_conceding
+  - name: fact_reaction_events
     description: Um registro por gol sofrido; flags de reacao e resultado final.
     columns:
       - name: match_id
+        tests:
+          - not_null
+      - name: competition_name
         tests:
           - not_null
       - name: conceding_team
@@ -24,11 +27,11 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['WIN', 'DRAW', 'LOSS']
+              values: ['WIN', 'DRAW', 'LOSS', 'UNKNOWN']
 
-  - name: league_reaction_summary
+  - name: dim_competition_summary
     columns:
-      - name: league
+      - name: competition_name
         tests:
           - not_null
       - name: pct_reacted

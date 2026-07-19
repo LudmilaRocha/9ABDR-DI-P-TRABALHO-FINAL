@@ -4,6 +4,8 @@ Uso:
     python run_snowflake_sql.py 01_setup_snowflake.sql
     python run_snowflake_sql.py --put-data-flat
     python run_snowflake_sql.py 02_bronze_ingest.sql
+
+CSVs esperados em data_flat/: matches_bronze.csv, goals_bronze.csv
 """
 
 from __future__ import annotations
@@ -29,7 +31,9 @@ def connect():
     database = (cfg.get("SNOWFLAKE_DATABASE") or "DI_P_MEDALLION").strip()
 
     if not account or not user or not password:
-        raise SystemExit("Preencha SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER e SNOWFLAKE_PAT no .env")
+        raise SystemExit(
+            "Preencha SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER e SNOWFLAKE_PAT ou SNOWFLAKE_PASSWORD no .env"
+        )
 
     conn = snowflake.connector.connect(
         account=account,
@@ -112,11 +116,10 @@ def put_data_flat() -> None:
     files = [
         data_dir / "matches_bronze.csv",
         data_dir / "goals_bronze.csv",
-        data_dir / "league_catalog.csv",
     ]
     missing = [str(f) for f in files if not f.exists()]
     if missing:
-        raise SystemExit(f"CSVs ausentes: {missing}. Rode 00_download_flatten_openfootball.py")
+        raise SystemExit(f"CSVs ausentes: {missing}. Rode 00_download_flatten_worldcup.py")
 
     conn, warehouse, database = connect()
     cur = conn.cursor()
@@ -130,7 +133,7 @@ def put_data_flat() -> None:
         for f in files:
             local = str(f.resolve()).replace("\\", "/")
             sql = (
-                f"PUT file://{local} @STG_OPENFOOTBALL "
+                f"PUT file://{local} @STG_WORLDCUP "
                 f"AUTO_COMPRESS=FALSE OVERWRITE=TRUE"
             )
             print(f"PUT {f.name} ...")
@@ -138,8 +141,8 @@ def put_data_flat() -> None:
             rows = cur.fetchall()
             print("  ", rows)
 
-        cur.execute("LIST @STG_OPENFOOTBALL")
-        print("LIST @STG_OPENFOOTBALL:")
+        cur.execute("LIST @STG_WORLDCUP")
+        print("LIST @STG_WORLDCUP:")
         for r in cur.fetchall():
             print("  ", r[0], r[1] if len(r) > 1 else "")
     finally:

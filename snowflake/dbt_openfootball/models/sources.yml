@@ -5,6 +5,5 @@ sources:
     database: DI_P_MEDALLION
     schema: BRONZE
     tables:
-      - name: MATCHES_RAW
+      - name: MATCHES
       - name: GOALS_RAW
-      - name: LEAGUE_CATALOG
