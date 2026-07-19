@@ -1,6 +1,6 @@
 # World Cup Analytics — Capacidade de Reação das Seleções
 
-Projeto Final do MBA em Engenharia de Dados. Pipeline de Big Data com Arquitetura Medallion (Bronze → Silver → Gold) para análise histórica de Copas do Mundo FIFA (1930–2022).
+Projeto Final do MBA em Engenharia de Dados. Pipeline de Big Data com Arquitetura Medallion (Bronze → Silver → Gold) para análise histórica de Copas do Mundo FIFA (1930–2026).
 
 ---
 
@@ -44,11 +44,11 @@ O pipeline foi construído com **PySpark** e **Delta Lake**, de forma agnóstica
 ```
 
 ### Camada Bronze (Raw)
-Ingestão dos JSONs brutos da API sem nenhuma transformação. Registro histórico imutável.
+Ingestão dos JSONs brutos da API sem nenhuma transformação. Registro histórico imutável. Schema flexível para absorver mudanças de tipagem na fonte original (Schema Evolution).
 
 ### Camada Silver (Cleansed)
 
-- Tipagem das colunas
+- Tipagem das colunas e conversão segura de formatos (ex: conversão de acréscimos "90+10" para minutos inteiros).
 - Padronização e renomeação de campos
 - Regras de Data Quality: registros inválidos (minuto nulo, fora do intervalo 0–130) são desviados para **tabelas de quarentena**, preservando a integridade analítica
 
