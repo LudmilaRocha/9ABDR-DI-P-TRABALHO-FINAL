@@ -12,6 +12,7 @@ Com isso, o Databricks executará os arquivos `.sql` e gerará os exatos mesmos 
 
 ## Estrutura
 
+- `models/sources.yml`: Mapeamento da Camada Bronze. O dbt não realiza a extração (E de ELT), portanto as tabelas brutas geradas pelo notebook PySpark são declaradas aqui como "Source" para alimentar a Silver.
 - `models/silver/goal_events.sql`: Lógica de limpeza adaptada com `TRY_CAST` suportado pelo Databricks SQL.
 - `models/gold/fact_reaction_events.sql`: Tabela Fato usando ANSI SQL e window functions (via subqueries e self-joins) compatíveis.
 - `models/gold/dim_competition_summary.sql`: Tabela Dimensão/Métricas.
