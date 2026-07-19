@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: "Tabelas brutas ingeridas via Databricks (PySpark) e armazenadas no formato Delta"
+    tables:
+      - name: goals_raw
+        description: "Eventos brutos de gols extraídos da API worldcup.json"
+      - name: matches
+        description: "Partidas brutas extraídas da API"
