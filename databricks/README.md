@@ -77,7 +77,7 @@ Modelagem dimensional voltada para consumo de BI:
 
 ## Conclusões
 
-| Indicador | Copas Antigas (1934) | Copas Modernas (2014–2022) |
+| Indicador | Copas Antigas (1934) | Copas Modernas (2014–2026) |
 |-----------|---------------------|---------------------------|
 | Taxa de Reação | ~60% | ~44% |
 | Taxa de Virada (Vitória) | ~25% | ~15% |
