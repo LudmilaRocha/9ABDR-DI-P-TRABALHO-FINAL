@@ -1,8 +1,8 @@
-name: openfootball_medallion
+name: worldcup_medallion
 version: 1.0.0
 config-version: 2
 
-profile: openfootball_medallion
+profile: worldcup_medallion
 
 model-paths: ["models"]
 analysis-paths: ["analyses"]
@@ -16,7 +16,7 @@ clean-targets:
   - dbt_packages
 
 models:
-  openfootball_medallion:
+  worldcup_medallion:
     bronze:
       +schema: bronze
       +materialized: view

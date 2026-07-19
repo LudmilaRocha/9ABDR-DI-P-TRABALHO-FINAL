@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: silver_matches
+  - name: matches
     columns:
       - name: match_id
         tests:
@@ -30,19 +30,17 @@ models:
               min_value: 0
               max_value: 50
               inclusive: true
-      - name: league_code
+      - name: competition_name
         tests:
           - not_null
-          - accepted_values:
-              values: ['EN', 'ES', 'IT', 'DE', 'FR', 'WC']
 
-  - name: silver_goal_events
+  - name: goal_events
     columns:
       - name: match_id
         tests:
           - not_null
           - relationships:
-              to: ref('silver_matches')
+              to: ref('matches')
               field: match_id
       - name: scorer
         tests:
@@ -55,6 +53,9 @@ models:
               max_value: 130
               inclusive: true
       - name: team
+        tests:
+          - not_null
+      - name: credited_team
         tests:
           - not_null
       - name: conceding_team

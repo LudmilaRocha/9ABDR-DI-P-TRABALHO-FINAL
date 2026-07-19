@@ -1,61 +1,70 @@
-# Snowflake | openfootball
+# Snowflake | World Cup (alinhado ao Databricks)
 
 Pipeline Medallion no Snowflake (Membro 3 - Ayrton).
 
 Pergunta de negocio ([FOUNDATION.md](../FOUNDATION.md)): o time reage depois de sofrer um gol?
 
+Fonte e regras iguais ao pipeline em `databricks/`: **openfootball/worldcup.json**.
+
 ## Estrutura
 
 | Arquivo / pasta | Conteudo |
 |-----------------|----------|
-| `00_download_flatten_openfootball.py` | Download da fonte e CSVs flat |
+| `00_download_flatten_worldcup.py` | Download ZIP worldcup.json + CSVs flat |
+| `00_PROPOSTA_BASE_E_ALINHAMENTO.md` | Escopo Snowflake |
 | `01` a `07` `*.sql` | Setup, Bronze, Silver, Gold, QC, Task, Streamlit |
 | `dbt_openfootball/` | Models e testes dbt |
 | `streamlit_in_snowflake/` | App Streamlit no Snowflake |
 | `run_snowflake_sql.py` / `load_env.ps1` | Execucao via CLI |
-| `00_PROPOSTA_BASE_E_ALINHAMENTO.md` | Escopo Snowflake |
 
 ## Dados
 
-- Big 5 2023/24 (`football.json`): partidas (placar final)
-- Copa do Mundo 2022 (`worldcup.more`): partidas + gols com minuto
-
-A Gold de reacao usa a Copa (fonte com minuto).
+- Repositorio: `openfootball/worldcup.json` (ZIP master)
+- Filtro: `name` contem `World Cup` e nao contem `Club`
+- Extração: full do ZIP a cada run (sem janela de datas no codigo)
+- Janela operacional: semanal (segunda 06:00); diario opcional em ano de Copa
 
 ## Fluxo
 
 ```
-Fonte GitHub
-  -> BRONZE.MATCHES_RAW / GOALS_RAW
+worldcup.json (ZIP)
+  -> BRONZE.MATCHES (MERGE) / BRONZE.GOALS_RAW (overwrite)
   -> SILVER.MATCHES / GOAL_EVENTS (+ quarantine)
-  -> GOLD.RESPONSE_AFTER_CONCEDING
-  -> GOLD.LEAGUE_REACTION_SUMMARY
+  -> GOLD.FACT_REACTION_EVENTS
+  -> GOLD.DIM_COMPETITION_SUMMARY
 
-QC: checks SQL + dbt test (QC.DBT_RUN_RESULTS)
-Schedule: PIPE.TASK_OPENFOOTBALL_WEEKLY (segunda 06:00 America/Sao_Paulo)
-Consumo: Streamlit in Snowflake
+QC: checks SQL + dbt test
+Schedule: PIPE.TASK_WORLDCUP_WEEKLY (segunda 06:00 America/Sao_Paulo)
+Consumo: Streamlit GOLD.WORLDCUP_GOLD_DASH
 ```
 
-## Como rodar
+## Regras alinhadas ao Databricks
+
+- `match_id = MD5(match_date_team_home_team_away)`
+- `credited_team = team`, `conceding_team = opponent` (gol contra nao inverte)
+- Gold agrega por `competition_name`
+- Quarentena: `PARTIDA_INVALIDA` / `EVENTO_GOL_INVALIDO`
+
+## Como rodar no Snowflake
 
 1. Copie `.env.example` para `.env` e preencha conta, usuario e PAT/senha.
-2. PAT no Snowflake exige network policy no usuario/conta (configure no Snowsight antes do CLI).
+2. Se o CLI reclamar de IP bloqueado, crie/atualize a network policy no Snowsight (ACCOUNTADMIN) com o IP publico da maquina.
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
-python 00_download_flatten_openfootball.py
-python run_snowflake_sql.py --put-data-flat
+python 00_download_flatten_worldcup.py
 python run_snowflake_sql.py 01_setup_snowflake.sql
+python run_snowflake_sql.py --put-data-flat
 python run_snowflake_sql.py 02_bronze_ingest.sql
 python run_snowflake_sql.py 03_silver_transform.sql
 python run_snowflake_sql.py 04_gold_insights.sql
 python run_snowflake_sql.py 05_quality_checks.sql
 python run_snowflake_sql.py 06_pipeline_procedures_and_schedule.sql
 python run_snowflake_sql.py 07_streamlit_in_snowflake.sql
-# depois: PUT do streamlit_in_snowflake/streamlit_app.py no stage do app
+# PUT do streamlit_in_snowflake/* no stage GOLD.STG_STREAMLIT_APP
 ```
 
 dbt:
@@ -72,14 +81,14 @@ dbt test
 Disparar o job:
 
 ```sql
-EXECUTE TASK PIPE.TASK_OPENFOOTBALL_WEEKLY;
+EXECUTE TASK PIPE.TASK_WORLDCUP_WEEKLY;
 ```
 
 Consultas:
 
 ```sql
-SELECT * FROM GOLD.LEAGUE_REACTION_SUMMARY;
-SELECT * FROM GOLD.RESPONSE_AFTER_CONCEDING
+SELECT * FROM GOLD.DIM_COMPETITION_SUMMARY ORDER BY COMPETITION_NAME;
+SELECT * FROM GOLD.FACT_REACTION_EVENTS
 ORDER BY MATCH_DATE, GOAL_MINUTE
 LIMIT 50;
 ```

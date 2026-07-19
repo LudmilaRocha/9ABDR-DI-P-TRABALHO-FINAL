@@ -3,9 +3,11 @@
 .venv/
 __pycache__/
 *.pyc
+_*.py
 
 # Dados gerados (nao versionar)
 data_flat/
+data_raw/
 *.csv
 
 # Artefatos dbt locais

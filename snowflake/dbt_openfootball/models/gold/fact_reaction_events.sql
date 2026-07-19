@@ -1,8 +1,9 @@
+{{ config(alias='fact_reaction_events') }}
+
 WITH ordered AS (
     SELECT
         MATCH_ID,
-        LEAGUE_CODE AS LEAGUE,
-        SEASON,
+        COMPETITION_NAME,
         MATCH_DATE,
         HOME_TEAM,
         AWAY_TEAM,
@@ -15,7 +16,7 @@ WITH ordered AS (
         IS_OWN_GOAL,
         CREDITED_TEAM,
         CONCEDING_TEAM
-    FROM {{ ref('silver_goal_events') }}
+    FROM {{ ref('goal_events') }}
 ),
 scored AS (
     SELECT
@@ -26,7 +27,7 @@ scored AS (
             WHERE P.MATCH_ID = O.MATCH_ID
               AND (
                     P.GOAL_MINUTE < O.GOAL_MINUTE
-                 OR (P.GOAL_MINUTE = O.GOAL_MINUTE AND P.EVENT_SEQ < O.EVENT_SEQ)
+                    OR (P.GOAL_MINUTE = O.GOAL_MINUTE AND P.EVENT_SEQ < O.EVENT_SEQ)
               )
               AND P.CREDITED_TEAM = O.HOME_TEAM
         ) AS HOME_GOALS_BEFORE,
@@ -36,7 +37,7 @@ scored AS (
             WHERE P.MATCH_ID = O.MATCH_ID
               AND (
                     P.GOAL_MINUTE < O.GOAL_MINUTE
-                 OR (P.GOAL_MINUTE = O.GOAL_MINUTE AND P.EVENT_SEQ < O.EVENT_SEQ)
+                    OR (P.GOAL_MINUTE = O.GOAL_MINUTE AND P.EVENT_SEQ < O.EVENT_SEQ)
               )
               AND P.CREDITED_TEAM = O.AWAY_TEAM
         ) AS AWAY_GOALS_BEFORE,
@@ -47,15 +48,14 @@ scored AS (
               AND AFT.CREDITED_TEAM = O.CONCEDING_TEAM
               AND (
                     AFT.GOAL_MINUTE > O.GOAL_MINUTE
-                 OR (AFT.GOAL_MINUTE = O.GOAL_MINUTE AND AFT.EVENT_SEQ > O.EVENT_SEQ)
+                    OR (AFT.GOAL_MINUTE = O.GOAL_MINUTE AND AFT.EVENT_SEQ > O.EVENT_SEQ)
               )
         ) AS GOALS_SCORED_AFTER_CONCEDING
     FROM ordered O
 )
 SELECT
     MATCH_ID,
-    LEAGUE,
-    SEASON,
+    COMPETITION_NAME,
     MATCH_DATE,
     HOME_TEAM,
     AWAY_TEAM,
@@ -80,5 +80,6 @@ SELECT
         WHEN CONCEDING_TEAM = AWAY_TEAM AND AWAY_SCORE_FT < HOME_SCORE_FT THEN 'LOSS'
         ELSE 'UNKNOWN'
     END AS FINAL_RESULT,
-    IFF(GOALS_SCORED_AFTER_CONCEDING > 0, 1, 0) AS REACTED_FLAG
+    IFF(GOALS_SCORED_AFTER_CONCEDING > 0, 1, 0) AS REACTED_FLAG,
+    CURRENT_TIMESTAMP() AS BUILT_AT
 FROM scored
