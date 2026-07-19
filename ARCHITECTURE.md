@@ -5,13 +5,13 @@
 ║         PIPELINE — OPEN FOOTBALL DATABASE  │  Arquitetura Medallion                ║
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 
-┌──────────────────────────────────────────────┐
-│           FONTE  —  GitHub (openfootball)    │
-│                                              │
-│  football.json          *.txt por liga       │
-│  (placar final por      (eventos de gol      │
-│   rodada/temporada)      com minuto)         │
-└──────────────────────────┬───────────────────┘
+  ┌──────────────────────────────────────────────┐
+  │           FONTE  —  GitHub (openfootball)    │
+  │                                              │
+  │              worldcup.json                   │
+  │      (copas do mundo de 1930 a 2026)         │
+  │                                              │
+  └──────────────────────────┬───────────────────┘
                            │  HTTP / Git pull
                            │  Semanal: seg 06h  |  Recesso: dia 1/mês 06h
                            ▼
