@@ -1,17 +1,14 @@
-# Diagrama de Arquitetura — Pipeline Open Football Database
-
-```
 ╔══════════════════════════════════════════════════════════════════════════════════════╗
 ║         PIPELINE — OPEN FOOTBALL DATABASE  │  Arquitetura Medallion                ║
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 
-  ┌──────────────────────────────────────────────┐
-  │           FONTE  —  GitHub (openfootball)    │
-  │                                              │
-  │              worldcup.json                   │
-  │      (copas do mundo de 1930 a 2026)         │
-  │                                              │
-  └──────────────────────────┬───────────────────┘
+┌──────────────────────────────────────────────┐
+│           FONTE  —  GitHub (openfootball)    │
+│                                              │
+│  football.json          *.txt por liga       │
+│  (placar final por      (eventos de gol      │
+│   rodada/temporada)      com minuto)         │
+└──────────────────────────┬───────────────────┘
                            │  HTTP / Git pull
                            │  Semanal: seg 06h  |  Recesso: dia 1/mês 06h
                            ▼
@@ -27,10 +24,22 @@
   │  Catálogo:  Unity Catalog       │     │  Catálogo:  Snowflake DB/Schema │
   │  Orquest.:  Databricks Workflow │     │  Orquest.:  Snowflake Tasks     │
   │                                 │     │                                 │
-  │  bronze.matches                 │     │  BRONZE.MATCHES                 │
+  │  bronze.matches_raw             │     │  BRONZE.MATCHES_RAW             │
   │  bronze.goals_raw               │     │  BRONZE.GOALS_RAW               │
   └───────────────┬─────────────────┘     └─────────────────┬───────────────┘
                   └──────────────┬────────────────────────────┘
+                                 ▼
+              ┌──────────────────────────────────────────┐
+              │  ✓  QUALITY CHECKS — Bronze              │
+              │                                          │
+              │  • Schema: campos obrigatórios presentes │
+              │  • Not-null: date, team1, team2, score   │
+              │  • Sem source_file duplicado na carga    │
+              │  • Score não-negativo (≥ 0)              │
+              │                                          │
+              │  Falha → registro vai para _quarantine   │
+              │           carga continua normalmente     │
+              └──────────────────┬───────────────────────┘
                                  │
                                  ▼
 ══════════════════════════════════════════════════════════════════════════════════
@@ -46,21 +55,23 @@
   │  Schema evo: Unity Catalog      │     │  Schema evo: Schema Evolution   │
   │                                 │     │                                 │
   │  silver.matches                 │     │  SILVER.MATCHES                 │
-  │  silver.matches_quarantine      │     │  SILVER.MATCHES_QUARANTINE      │
   │  silver.goal_events             │     │  SILVER.GOAL_EVENTS             │
-  │  silver.goal_events_quarantine  │     │  SILVER.GOAL_EVENTS_QUARANTINE  │
   └───────────────┬─────────────────┘     └─────────────────┬───────────────┘
                   └──────────────┬────────────────────────────┘
                                  ▼
               ┌──────────────────────────────────────────┐
               │  ✓  QUALITY CHECKS — Silver              │
               │                                          │
-              │  • Not-null: id, data, times, placar     │
-              │  • Score não-negativo (≥ 0)              │
-              │  • Validação de minutos de gols (0 a 130)│
+              │  • Integridade ref.: goal_event tem      │
+              │    match_id válido em matches            │
+              │  • Datas: date ∈ [1990-01-01, hoje]      │
+              │  • Sanidade: soma dos gols nos eventos   │
+              │    = score_ft_home / score_ft_away       │
+              │  • Deduplicação: sem (date, team1, team2)│
+              │    duplicado por liga/temporada          │
               │                                          │
-              │  Falha → registro movido para tabelas    │
-              │           de quarentena específicas      │
+              │  Falha → DQ report gerado                │
+              │           registro tagueado: dq_issue=T  │
               └──────────────────┬───────────────────────┘
                                  │
                                  ▼
@@ -76,18 +87,30 @@
   │  Exposição:Databricks SQL Wh.   │     │  Exposição:Snowflake Warehouse  │
   │                                 │     │            Streamlit in SF      │
   │                                 │     │                                 │
-  │  gold.fact_reaction_events      │     │  GOLD.FACT_REACTION_EVENTS      │
-  │  gold.dim_competition_summary   │     │  GOLD.DIM_COMPETITION_SUMMARY   │
+  │  gold.response_after_conceding  │     │  GOLD.RESPONSE_AFTER_CONCEDING  │
+  │  gold.league_reaction_summary   │     │  GOLD.LEAGUE_REACTION_SUMMARY   │
   └───────────────┬─────────────────┘     └─────────────────┬───────────────┘
                   └──────────────┬────────────────────────────┘
+                                 ▼
+              ┌──────────────────────────────────────────┐
+              │  ✓  QUALITY CHECKS — Gold                │
+              │                                          │
+              │  • Completude: toda liga/temporada ativa │
+              │    tem registros na Gold                 │
+              │  • Nenhum registro com dq_issue=T        │
+              │    incluído nas métricas                 │
+              │  • Total de partidas Gold ≥ Silver       │
+              │                                          │
+              │  Falha → Gold não é atualizada           │
+              │           versão anterior permanece      │
+              └──────────────────┬───────────────────────┘
                                  │
                                  ▼
               ┌──────────────────────────────────────────┐
               │     CONSUMO  —  Pergunta de negócio      │
               │                                          │
               │  "Qual % dos times reage após sofrer um  │
-              │   gol? A reação leva à vitória? Esse     │
-              │   padrão varia por Copa do Mundo?"       │
+              │   gol? Esse padrão varia por liga?"      │
               │                                          │
               │  Dashboard  /  Query analítica           │
               └──────────────────────────────────────────┘
@@ -109,4 +132,3 @@
   Databricks:  Databricks Workflow  →  Job com cron schedule
   Snowflake:   Task raiz com        →  USING CRON 0 6 * * 1 UTC
                Task filhas encadeadas por AFTER (Silver depois Bronze, Gold depois Silver)
-```

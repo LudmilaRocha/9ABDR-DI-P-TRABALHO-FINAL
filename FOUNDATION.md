@@ -13,7 +13,7 @@ Base de dados pública e de domínio público (Creative Commons Zero - CC0) com 
 ## 2. Justificativa da escolha
 
 **Pergunta de negócio:**  
-*Eficiência emocional*: qual o impacto no desempenho dos times diante de um gol sofrido?  
+*Eficiência emocional*: Qual percentual das seleções reage após sofrer um gol, e como essa taxa evoluiu ao longo das edições da Copa do Mundo?
 Como a partida se desenrola a partir do momento em que um time sofre um gol? Existe tendência de resposta (empate/virada) ou os times geralmente não reagem bem?
 
 **Por que essa base resolve esse problema:**
